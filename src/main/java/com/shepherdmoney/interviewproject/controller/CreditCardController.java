@@ -17,7 +17,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-
+/**
+ * Controller for handling credit card related operations.
+ */
 @RestController
 public class CreditCardController {
 
@@ -27,6 +29,12 @@ public class CreditCardController {
     @Autowired
     private UserRepository userRepository;
 
+    /**
+     * Endpoint to add a credit card to a user.
+     *
+     * @param payload The payload containing the user ID and credit card details.
+     * @return The ID of the created credit card.
+     */
     @PostMapping("/credit-card")
     public ResponseEntity<Integer> addCreditCardToUser(@RequestBody AddCreditCardToUserPayload payload) {
         Optional<User> user = userRepository.findById(payload.getUserId());
@@ -42,6 +50,12 @@ public class CreditCardController {
         }
     }
 
+    /**
+     * Endpoint to get all credit cards of a user.
+     *
+     * @param userId The ID of the user.
+     * @return A list of credit cards associated with the user.
+     */
     @GetMapping("/credit-card:all")
     public ResponseEntity<List<CreditCardView>> getAllCardOfUser(@RequestParam int userId) {
 
@@ -56,12 +70,24 @@ public class CreditCardController {
         }
     }
 
+    /**
+     * Endpoint to get the user ID associated with a credit card.
+     *
+     * @param creditCardNumber The number of the credit card.
+     * @return The ID of the user associated with the credit card.
+     */
     @GetMapping("/credit-card:user-id")
     public ResponseEntity<Integer> getUserIdForCreditCard(@RequestParam String creditCardNumber) {
         Optional<CreditCard> creditCardOptional = creditCardRepository.findByNumber(creditCardNumber);
         return creditCardOptional.map(creditCard -> ResponseEntity.ok(creditCard.getOwner().getId())).orElseGet(() -> ResponseEntity.badRequest().build());
     }
 
+    /**
+     * Endpoint to update the balance of a credit card.
+     *
+     * @param payloadList The list of payloads containing the credit card number and the new balance.
+     * @return A response entity indicating the result of the operation.
+     */
     @PostMapping("/credit-card:update-balance")
     public ResponseEntity<Void> updateCreditCardBalance(@RequestBody UpdateBalancePayload[] payloadList) {
 
@@ -87,6 +113,11 @@ public class CreditCardController {
         return ResponseEntity.ok().build();
     }
 
+    /**
+     * Method to fill the gaps in the balance history of a credit card.
+     *
+     * @param balanceHistory The list of balance history entries.
+     */
     private void fillBalanceHistoryGaps(List<BalanceHistory> balanceHistory) {
         if (balanceHistory.isEmpty()) {
             return;
@@ -118,6 +149,12 @@ public class CreditCardController {
         }
     }
 
+    /**
+     * Method to update the balance of a credit card for all dates following a specific date.
+     *
+     * @param payload        The payload containing the credit card number and the new balance.
+     * @param balanceHistory The list of balance history entries.
+     */
     private void updateFollowingDatesBalance(UpdateBalancePayload payload, List<BalanceHistory> balanceHistory) {
         double difference = 0.0;
 
@@ -125,9 +162,11 @@ public class CreditCardController {
             BalanceHistory balanceHistoryEntry = balanceHistory.get(i);
             if (balanceHistoryEntry.getDate().isEqual(payload.getBalanceDate())) {
                 difference = payload.getBalanceAmount() - balanceHistoryEntry.getBalance();
+                balanceHistoryEntry.setBalance(balanceHistoryEntry.getBalance() + difference);
             }
-            balanceHistoryEntry.setBalance(balanceHistoryEntry.getBalance() + difference);
+            if (balanceHistoryEntry.getDate().isAfter(payload.getBalanceDate())) {
+                balanceHistoryEntry.setBalance(balanceHistoryEntry.getBalance() + difference);
+            }
         }
     }
-
 }

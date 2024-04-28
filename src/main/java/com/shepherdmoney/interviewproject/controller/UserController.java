@@ -7,12 +7,21 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+/**
+ * Controller for handling user related operations.
+ */
 @RestController
 public class UserController {
 
     @Autowired
     private UserRepository userRepository;
 
+    /**
+     * Endpoint to create a new user.
+     *
+     * @param payload The payload containing the user's name and email.
+     * @return The ID of the created user.
+     */
     @PutMapping("/user")
     public ResponseEntity<Integer> createUser(@RequestBody CreateUserPayload payload) {
         User user = new User();
@@ -24,6 +33,12 @@ public class UserController {
         return ResponseEntity.ok(savedUser.getId());
     }
 
+    /**
+     * Endpoint to delete a user.
+     *
+     * @param userId The ID of the user to be deleted.
+     * @return A response entity indicating the result of the operation.
+     */
     @DeleteMapping("/user")
     public ResponseEntity<String> deleteUser(@RequestParam int userId) {
         if (userRepository.existsById(userId)) {
